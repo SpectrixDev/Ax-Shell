@@ -46,14 +46,14 @@ class Brightness(Service):
         
         # Detect backend
         self.backend = self._detect_backend(backend)
+
+        self.max_screen = self._read_max_brightness() or 100
         
         if self.backend:
             if self.backend == "ddcutil":
-                self.max_screen = 100
                 # Initialize brightness cache
                 GLib.timeout_add(100, lambda: self._update_brightness_cache())
             else:
-                self.max_screen = self._read_max_brightness() or 100
                 # Setup polling for brightness file
                 self._setup_polling()
 
@@ -135,12 +135,27 @@ class Brightness(Service):
             return -1
 
     def _read_max_brightness(self):
-        """Read maximum brightness value from sysfs (for brightnessctl)."""
-        try:
-            with open(f"/sys/class/backlight/{self._get_screen_device()}/max_brightness") as f:
-                return int(f.readline().strip())
-        except Exception:
-            return None
+        """Read maximum brightness value"""
+        if self.backend:
+            if self.backend == "ddcutil":
+                try:
+                    process = subprocess.run(
+                        ["ddcutil", "--bus", str(self.ddcutil_bus), *self.DDCUTIL_PARAMS.split(), "getvcp", "10"],
+                        text=True, capture_output=True, timeout=2
+                    )
+                    
+                    if process.returncode == 0:
+                        match = re.search(r"current value\s*=\s*(\d+)\s*,\s*max value\s*=\s*(\d+)", process.stdout)
+                        if match:
+                            return int(match.group(2))
+                except Exception as e:
+                    logger.error(f"Error executing ddcutil: {e}")
+            else:
+                try:
+                    with open(f"/sys/class/backlight/{self._get_screen_device()}/max_brightness") as f:
+                        return int(f.readline().strip())
+                except Exception:
+                    return None
 
     def _update_brightness_cache(self):
         """Update brightness cache with current value."""
