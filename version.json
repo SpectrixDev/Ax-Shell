@@ -1,6 +1,7 @@
 {
-	"version": "0.0.16",
+	"version": "0.0.24",
+  "pkg_update": false,
 	"changelog": [
-    "<b>feat:</b> Added 12 hours format for time display. Check Appearance settings."
+    "<b>fix:</b> Audio Mixer max characters."
 	]
 }
