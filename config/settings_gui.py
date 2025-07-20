@@ -580,7 +580,7 @@ class HyprConfGUI(Window):
             "weather": "Weather Widget",
             "battery": "Battery Indicator",
             "metrics": "System Metrics",
-            'temperatures': "System Temps"
+            'temperatures': "System Temps",
             "language": "Language Indicator",
             "date_time": "Date & Time",
             "button_power": "Power Button",

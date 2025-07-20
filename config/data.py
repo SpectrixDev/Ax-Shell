@@ -99,6 +99,7 @@ if os.path.exists(CONFIG_FILE):
     BAR_METRICS_DISKS = config.get('bar_metrics_disks', ["/"])
     METRICS_VISIBLE = config.get('metrics_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
     METRICS_SMALL_VISIBLE = config.get('metrics_small_visible', {'cpu': True, 'ram': True, 'disk': True, 'gpu': True})
+    TEMPERATURE_POLL_INTERVAL = config.get('temperature_poll_interval', 1)
 else:
     WALLPAPERS_DIR = WALLPAPERS_DIR_DEFAULT
     BAR_POSITION = "Top"

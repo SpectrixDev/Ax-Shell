@@ -47,7 +47,7 @@ class MetricsProvider:
 
         self._gpu_update_running = False
 
-        GLib.timeout_add_seconds(1, self._update)
+        GLib.timeout_add_seconds(data.TEMPERATURE_POLL_INTERVAL, self._update)
 
     def _update(self):
         self.cpu = psutil.cpu_percent(interval=0)
