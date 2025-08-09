@@ -2,12 +2,9 @@ import json
 import os
 
 from fabric.hyprland.service import HyprlandEvent
-from fabric.hyprland.widgets import (
-    Language,
-    WorkspaceButton,
-    Workspaces,
-    get_hyprland_connection,
-)
+from fabric.hyprland.widgets import HyprlandLanguage as Language
+from fabric.hyprland.widgets import HyprlandWorkspaces as Workspaces
+from fabric.hyprland.widgets import WorkspaceButton, get_hyprland_connection
 from fabric.utils.helpers import exec_shell_command_async
 from fabric.widgets.box import Box
 from fabric.widgets.button import Button
@@ -21,7 +18,9 @@ import config.data as data
 import modules.icons as icons
 from modules.controls import ControlSmall
 from modules.dock import Dock
-from modules.metrics import Battery, MetricsSmall, NetworkApplet, TemperaturesBar
+from modules.metrics import (Battery, MetricsSmall, NetworkApplet,
+                             TemperaturesBar)
+from modules.systemprofiles import Systemprofiles
 from modules.systemtray import SystemTray
 from modules.weather import Weather
 from widgets.wayland import WaylandWindow as Window
@@ -117,9 +116,11 @@ class Bar(Window):
                 )
                 for i in range(1, 11)
             ],
-            buttons_factory=None
-            if data.BAR_HIDE_SPECIAL_WORKSPACE
-            else Workspaces.default_buttons_factory,
+            buttons_factory=(
+                None
+                if data.BAR_HIDE_SPECIAL_WORKSPACE
+                else Workspaces.default_buttons_factory
+            ),
         )
 
         self.workspaces_num = Workspaces(
@@ -136,23 +137,29 @@ class Bar(Window):
                     h_align="center",
                     v_align="center",
                     id=i,
-                    label=CHINESE_NUMERALS[i - 1]
-                    if data.BAR_WORKSPACE_USE_CHINESE_NUMERALS
-                    and 1 <= i <= len(CHINESE_NUMERALS)
-                    else str(i),
+                    label=(
+                        CHINESE_NUMERALS[i - 1]
+                        if data.BAR_WORKSPACE_USE_CHINESE_NUMERALS
+                        and 1 <= i <= len(CHINESE_NUMERALS)
+                        else str(i)
+                    ),
                 )
                 for i in range(1, 11)
             ],
-            buttons_factory=None
-            if data.BAR_HIDE_SPECIAL_WORKSPACE
-            else Workspaces.default_buttons_factory,
+            buttons_factory=(
+                None
+                if data.BAR_HIDE_SPECIAL_WORKSPACE
+                else Workspaces.default_buttons_factory
+            ),
         )
 
         self.ws_container = Box(
             name="workspaces-container",
-            children=self.workspaces
-            if not data.BAR_WORKSPACE_SHOW_NUMBER
-            else self.workspaces_num,
+            children=(
+                self.workspaces
+                if not data.BAR_WORKSPACE_SHOW_NUMBER
+                else self.workspaces_num
+            ),
         )
 
         self.button_tools = Button(
@@ -168,6 +175,9 @@ class Bar(Window):
 
         self.systray = SystemTray()
         self.weather = Weather()
+        self.sysprofiles = Systemprofiles()
+        self.temperatures_bar = TemperaturesBar()
+
         self.network = NetworkApplet()
 
         self.lang_label = Label(name="lang-label")
@@ -187,9 +197,11 @@ class Bar(Window):
 
         self.date_time = DateTime(
             name="date-time",
-            formatters=[time_format_horizontal]
-            if not data.VERTICAL
-            else [time_format_vertical],
+            formatters=(
+                [time_format_horizontal]
+                if not data.VERTICAL
+                else [time_format_vertical]
+            ),
             h_align="center" if not data.VERTICAL else "fill",
             v_align="center",
             h_expand=True,
@@ -225,12 +237,10 @@ class Bar(Window):
         self.button_overview.connect("leave_notify_event", self.on_button_leave)
 
         self.control = ControlSmall()
-        self.temperatures_bar = TemperaturesBar()
         self.metrics = MetricsSmall()
         self.battery = Battery()
 
         self.apply_component_props()
-
         self.rev_right = [
             self.temperatures_bar,
             self.metrics,
@@ -258,6 +268,7 @@ class Bar(Window):
 
         self.rev_left = [
             self.weather,
+            self.sysprofiles,
             self.network,
         ]
 
@@ -301,6 +312,7 @@ class Bar(Window):
             self.button_apps,
             self.systray,
             self.control,
+            self.sysprofiles,
             self.network,
             self.button_tools,
         ]
@@ -344,42 +356,56 @@ class Bar(Window):
             bar_center_actual_children = Box(
                 orientation=Gtk.Orientation.VERTICAL,
                 spacing=4,
-                children=self.v_all_children
-                if is_centered_bar
-                else self.v_center_children,
+                children=(
+                    self.v_all_children if is_centered_bar else self.v_center_children
+                ),
             )
 
         self.bar_inner = CenterBox(
             name="bar-inner",
-            orientation=Gtk.Orientation.HORIZONTAL
-            if not data.VERTICAL
-            else Gtk.Orientation.VERTICAL,
+            orientation=(
+                Gtk.Orientation.HORIZONTAL
+                if not data.VERTICAL
+                else Gtk.Orientation.VERTICAL
+            ),
             h_align="fill",
             v_align="fill",
-            start_children=None
-            if is_centered_bar
-            else Box(
-                name="start-container",
-                spacing=4,
-                orientation=Gtk.Orientation.HORIZONTAL
-                if not data.VERTICAL
-                else Gtk.Orientation.VERTICAL,
-                children=self.h_start_children
-                if not data.VERTICAL
-                else self.v_start_children,
+            start_children=(
+                None
+                if is_centered_bar
+                else Box(
+                    name="start-container",
+                    spacing=4,
+                    orientation=(
+                        Gtk.Orientation.HORIZONTAL
+                        if not data.VERTICAL
+                        else Gtk.Orientation.VERTICAL
+                    ),
+                    children=(
+                        self.h_start_children
+                        if not data.VERTICAL
+                        else self.v_start_children
+                    ),
+                )
             ),
             center_children=bar_center_actual_children,
-            end_children=None
-            if is_centered_bar
-            else Box(
-                name="end-container",
-                spacing=4,
-                orientation=Gtk.Orientation.HORIZONTAL
-                if not data.VERTICAL
-                else Gtk.Orientation.VERTICAL,
-                children=self.h_end_children
-                if not data.VERTICAL
-                else self.v_end_children,
+            end_children=(
+                None
+                if is_centered_bar
+                else Box(
+                    name="end-container",
+                    spacing=4,
+                    orientation=(
+                        Gtk.Orientation.HORIZONTAL
+                        if not data.VERTICAL
+                        else Gtk.Orientation.VERTICAL
+                    ),
+                    children=(
+                        self.h_end_children
+                        if not data.VERTICAL
+                        else self.v_end_children
+                    ),
+                )
             ),
         )
 
@@ -461,6 +487,7 @@ class Bar(Window):
         self.chinese_numbers()
 
     def apply_component_props(self):
+        # Merged components dictionary
         components = {
             'button_apps': self.button_apps,
             'systray': self.systray,
@@ -476,6 +503,7 @@ class Bar(Window):
             'language': self.language,
             'date_time': self.date_time,
             'button_power': self.button_power,
+            'sysprofiles': self.sysprofiles,
         }
 
         for component_name, widget in components.items():
@@ -483,6 +511,7 @@ class Bar(Window):
                 widget.set_visible(self.component_visibility[component_name])
 
     def toggle_component_visibility(self, component_name):
+        # Merged components dictionary
         components = {
             'button_apps': self.button_apps,
             'systray': self.systray,
@@ -498,6 +527,7 @@ class Bar(Window):
             'language': self.language,
             'date_time': self.date_time,
             'button_power': self.button_power,
+            'sysprofiles': self.sysprofiles,
         }
 
         if component_name in components and component_name in self.component_visibility:
