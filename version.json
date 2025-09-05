@@ -1,7 +1,8 @@
 {
-	"version": "0.0.28", 
-  "pkg_update": true,
+	"version": "0.0.41", 
+  "pkg_update": false,
 	"changelog": [
-    "<b>fix:</b> Implemented latest Fabric WM/Compositor specific widgets."
+    "<b>fix:</b> Hover to show notch not working",
+    "<b>tweak:</b> Optimized cavalcade"
   ]
 }

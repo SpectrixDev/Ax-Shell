@@ -69,7 +69,8 @@ def createSurfaceFromWidget(widget: Gtk.Widget) -> cairo.ImageSurface:
 class Dock(Window):
     _instances = []
     
-    def __init__(self, integrated_mode: bool = False, **kwargs):
+    def __init__(self, monitor_id: int = 0, integrated_mode: bool = False, **kwargs):
+        self.monitor_id = monitor_id
 
         self.integrated_mode = integrated_mode
         self.icon_size = 20 if self.integrated_mode else data.DOCK_ICON_SIZE
@@ -115,6 +116,7 @@ class Dock(Window):
                 anchor=anchor_to_set,
                 margin="0px 0px 0px 0px",
                 exclusivity="none",
+                monitor=monitor_id,
                 **kwargs,
             )
             Dock._instances.append(self)
@@ -247,7 +249,9 @@ class Dock(Window):
                     corner.set_visible(False)
             
 
-            if not data.DOCK_ENABLED or (data.BAR_POSITION in ["Top", "Bottom"] and data.PANEL_THEME != "Notch"):
+            # Hide normal dock when it should be embedded in the bar OR when dock is disabled
+            should_be_embedded = (data.BAR_POSITION == "Bottom") or (data.PANEL_THEME == "Panel" and data.BAR_POSITION in ["Top", "Bottom"])
+            if should_be_embedded or not data.DOCK_ENABLED:
                 self.set_visible(False) 
             
             if self.always_occluded: 

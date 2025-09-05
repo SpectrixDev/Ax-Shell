@@ -48,13 +48,16 @@ tooltip_overview = """<b>Overview</b>"""
 
 
 class Bar(Window):
-    def __init__(self, **kwargs):
+    def __init__(self, monitor_id: int = 0, **kwargs):
+        self.monitor_id = monitor_id
+        
         super().__init__(
             name="bar",
             layer="top",
             exclusivity="auto",
             visible=True,
             all_visible=True,
+            monitor=monitor_id,
         )
 
         self.anchor_var = ""
@@ -97,6 +100,12 @@ class Bar(Window):
         self.dock_instance = None
         self.integrated_dock_widget = None
 
+        # Calculate workspace range based on monitor_id
+        # Monitor 0: workspaces 1-10, Monitor 1: workspaces 11-20, etc.
+        start_workspace = self.monitor_id * 10 + 1
+        end_workspace = start_workspace + 10
+        workspace_range = range(start_workspace, end_workspace)
+
         self.workspaces = Workspaces(
             name="workspaces",
             invert_scroll=True,
@@ -114,7 +123,7 @@ class Bar(Window):
                     label=None,
                     style_classes=["vertical"] if data.VERTICAL else None,
                 )
-                for i in range(1, 11)
+                for i in workspace_range
             ],
             buttons_factory=(
                 None
@@ -138,13 +147,13 @@ class Bar(Window):
                     v_align="center",
                     id=i,
                     label=(
-                        CHINESE_NUMERALS[i - 1]
+                        CHINESE_NUMERALS[(i - start_workspace)]
                         if data.BAR_WORKSPACE_USE_CHINESE_NUMERALS
-                        and 1 <= i <= len(CHINESE_NUMERALS)
+                        and 0 <= (i - start_workspace) < len(CHINESE_NUMERALS)
                         else str(i)
                     ),
                 )
-                for i in range(1, 11)
+                for i in workspace_range
             ],
             buttons_factory=(
                 None
@@ -336,12 +345,13 @@ class Bar(Window):
         self.v_all_children.extend(self.v_center_children)
         self.v_all_children.extend(self.v_end_children)
 
-        if (
-            data.DOCK_ENABLED
-            and data.BAR_POSITION == "Bottom"
-            or data.PANEL_THEME == "Panel"
-            and data.BAR_POSITION in ["Top", "Bottom"]
-        ):
+        # Create embedded dock when bar is in center position (regardless of DOCK_ENABLED setting)
+        should_embed_dock = (
+            data.BAR_POSITION == "Bottom"
+            or (data.PANEL_THEME == "Panel" and data.BAR_POSITION in ["Top", "Bottom"])
+        )
+        
+        if should_embed_dock:
             if not data.VERTICAL:
                 self.dock_instance = Dock(integrated_mode=True)
                 self.integrated_dock_widget = self.dock_instance.wrapper

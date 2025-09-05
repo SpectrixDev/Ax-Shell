@@ -163,6 +163,21 @@ class AppLauncher(Box):
         self.viewport.children = []
         self.selected_index = -1
 
+        def extract_command_name(command_line):
+            """Extract base command name from command line, removing paths and arguments"""
+            if not command_line:
+                return ""
+            # Remove common shell wrappers
+            if command_line.startswith("/bin/sh -c"):
+                # Handle wrapped commands like "/bin/sh -c "\$SHELL -i -c scrcpy""
+                return ""
+            # Split by spaces and take first part (the command)
+            cmd = command_line.split()[0] if command_line.split() else ""
+            # Extract just the command name from full paths
+            if "/" in cmd:
+                cmd = cmd.split("/")[-1]
+            return cmd
+
         filtered_apps_iter = iter(
             sorted(
                 [
@@ -173,6 +188,9 @@ class AppLauncher(Box):
                         (app.display_name or "")
                         + (" " + app.name + " ")
                         + (app.generic_name or "")
+                        + (" " + (app.command_line or "") + " ")
+                        + (" " + (app.executable or "") + " ")
+                        + (" " + extract_command_name(app.command_line) + " ")
                     ).casefold()
                 ],
                 key=lambda app: (app.display_name or "").casefold(),
@@ -187,9 +205,6 @@ class AppLauncher(Box):
         )
 
     def handle_arrange_complete(self, should_resize, query):
-        if should_resize:
-            self.resize_viewport()
-
         if query.strip() != "" and self.viewport.get_children():
             self.update_selection(0)
         return False
@@ -201,10 +216,9 @@ class AppLauncher(Box):
         return True
 
     def resize_viewport(self):
-        self.scrolled_window.set_min_content_width(
-            self.viewport.get_allocation().width
-        )
-        return False
+        # Removed set_min_content_width to prevent size retention issues
+        # when switching between modules in the notch stack
+        pass
 
     def bake_application_slot(self, app: DesktopApp, **kwargs) -> Button:
         button = Button(
