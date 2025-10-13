@@ -15,13 +15,18 @@ from gi.repository import GLib
 # Importar settings_constants para DEFAULTS
 from . import settings_constants
 from .data import (  # CONFIG_DIR, HOME_DIR no se usan aquí directamente
-    APP_NAME, APP_NAME_CAP, get_default)
+    APP_NAME,
+    APP_NAME_CAP,
+    get_default,
+)
 
 # Global variable to store binding variables, managed by this module
 bind_vars = {}  # Se inicializa vacío, load_bind_vars lo poblará
 
+
 def get_bind_var(setting_str: str):
     return bind_vars.get(setting_str, get_default(setting_str))
+
 
 def deep_update(target: dict, update: dict) -> dict:
     """
