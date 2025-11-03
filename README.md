@@ -55,6 +55,11 @@
 
 **Run the following command in your terminal once logged into Hyprland:**
 ```bash
+curl -fsSL is.gd/axshell | bash
+```
+
+**Alternative:**
+```bash
 curl -fsSL https://raw.githubusercontent.com/Axenide/Ax-Shell/main/install.sh | bash
 ```
 
