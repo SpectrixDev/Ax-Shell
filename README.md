@@ -55,7 +55,7 @@
 
 **Run the following command in your terminal once logged into Hyprland:**
 ```bash
-curl -fsSL is.gd/axshell | bash
+curl -fsSL get.axeni.de/ax-shell | bash
 ```
 
 **Alternative:**
