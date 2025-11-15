@@ -1,5 +1,5 @@
 {
-  "version": "0.0.55",
-  "pkg_update": false,
-  "changelog": ["<b>fix:</b> Fixed dock not updating."]
+  "version": "0.0.56",
+  "pkg_update": true,
+  "changelog": ["<b>fix:</b> swww changed to awww."]
 }
