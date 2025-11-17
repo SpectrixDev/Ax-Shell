@@ -1,8 +1,9 @@
 {
-  "version": "0.0.56",
+  "version": "0.0.57",
   "pkg_update": true,
   "changelog": [
     "<b>fix:</b> swww changed to awww.",
-    "<b>fix:</b> Bar hiding only on one monitor. (<a href='https://github.com/Axenide/Ax-Shell/pull/309'>#309</a>)"
+    "<b>fix:</b> Bar hiding only on one monitor. (<a href='https://github.com/Axenide/Ax-Shell/pull/309'>#309</a>)",
+    "<b>fix:</b> awww's exec-once to exec."
   ]
 }
