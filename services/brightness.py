@@ -13,7 +13,14 @@ from utils.colors import Colors
 
 
 class Brightness(Service):
-    """Service for controlling screen brightness level in percent (0-100%) using ddcutil or brightnessctl backends."""
+    """Service for controlling screen brightness using ddcutil or brightnessctl backends.
+
+    The service works with RAW values (0 to max_screen) for both backends:
+    - brightnessctl: raw values are device-specific (e.g., 0-96000)
+    - ddcutil: raw values are percentages (0-100)
+
+    The 'screen' signal emits percentage values (0-100) for UI display.
+    """
 
     instance = None
     DDCUTIL_PARAMS = "--disable-dynamic-sleep --sleep-multiplier=0.05"
@@ -66,7 +73,11 @@ class Brightness(Service):
                 # Initialize cache with current value
                 with open(file_path) as f:
                     self._last_raw = int(f.readline().strip())
-                    self._last_percent = int((self._last_raw / self.max_screen) * 100)
+                    self._last_percent = (
+                        int((self._last_raw / self.max_screen) * 100)
+                        if self.max_screen > 0
+                        else 0
+                    )
 
                 self._last_file_mtime = os.path.getmtime(file_path)
                 self._poll_timer_id = GLib.timeout_add(
@@ -88,7 +99,11 @@ class Brightness(Service):
 
                     if raw != self._last_raw:
                         self._last_raw = raw
-                        percent = int((raw / self.max_screen) * 100)
+                        percent = (
+                            int((raw / self.max_screen) * 100)
+                            if self.max_screen > 0
+                            else 0
+                        )
                         if (
                             abs(percent - self._last_percent)
                             >= self.MIN_CHANGE_THRESHOLD
@@ -199,24 +214,22 @@ class Brightness(Service):
 
     @Property(int, "read-write")
     def screen_brightness(self):
-        """Getter returns current brightness in percent (0-100%)."""
+        """Getter returns current brightness in RAW value (0 to max_screen)."""
         if not self.backend:
             return -1
 
         if self.backend == "brightnessctl":
-            # Return cached value if available
-            if self._last_percent != -1:
-                return self._last_percent
+            # Return cached raw value if available
+            if self._last_raw != -1:
+                return self._last_raw
 
             try:
                 with open(
                     f"/sys/class/backlight/{self._get_screen_device()}/brightness"
                 ) as f:
                     raw = int(f.readline().strip())
-                percent = int((raw / self.max_screen) * 100)
                 self._last_raw = raw
-                self._last_percent = percent
-                return percent
+                return raw
             except Exception as e:
                 logger.error(f"Error reading brightness file: {e}")
                 return -1
@@ -224,9 +237,9 @@ class Brightness(Service):
             # Use cached value if recent enough
             if (
                 time.time() - self._last_update_time < self.CACHE_INTERVAL
-                and self._last_percent != -1
+                and self._last_raw != -1
             ):
-                return self._last_percent
+                return self._last_raw
 
             try:
                 process = subprocess.run(
@@ -250,38 +263,40 @@ class Brightness(Service):
                     )
                     if match:
                         current = int(match.group(1))
-                        max_val = int(match.group(2))
-                        percent = int((current / max_val) * 100)
-                        self._last_percent = percent
+                        # For ddcutil, raw value IS the current value (0-100)
+                        self._last_raw = current
                         self._last_update_time = time.time()
-                        return percent
+                        return current
             except Exception as e:
                 logger.error(f"Error executing ddcutil: {e}")
 
-            return self._last_percent if self._last_percent != -1 else -1
+            return self._last_raw if self._last_raw != -1 else -1
 
     @screen_brightness.setter
-    def screen_brightness(self, percent: int):
-        """Setter accepts brightness value in percent (0-100%)."""
+    def screen_brightness(self, value: int):
+        """Setter accepts brightness value in RAW (0 to max_screen)."""
         self._lock.lock()
         try:
-            # Limit value between 0 and 100 percent
-            percent = max(0, min(percent, 100))
+            # Limit value between 0 and max_screen
+            value = max(0, min(value, self.max_screen))
 
-            # Check if change is significant enough
+            # Check if change is significant enough (in percentage terms)
+            current_percent = (
+                int((self._last_raw / self.max_screen) * 100)
+                if self._last_raw != -1 and self.max_screen > 0
+                else -1
+            )
+            new_percent = (
+                int((value / self.max_screen) * 100) if self.max_screen > 0 else 0
+            )
+
             if (
-                abs(percent - self._last_percent) < self.MIN_CHANGE_THRESHOLD
-                and self._last_percent != -1
+                abs(new_percent - current_percent) < self.MIN_CHANGE_THRESHOLD
+                and self._last_raw != -1
             ):
                 return
 
-            # Convert percent to raw value based on backend
-            raw = (
-                percent
-                if self.backend == "ddcutil"
-                else int((percent / 100) * self.max_screen)
-            )
-            self._pending_raw = raw
+            self._pending_raw = value
 
             # Use a single timer for applying changes
             if self._timer_id:
@@ -306,17 +321,19 @@ class Brightness(Service):
 
         try:
             # Update cache before executing command for faster UI response
+            self._last_raw = raw
+
+            # Calculate percentage for signal emission
+            percent = int((raw / self.max_screen) * 100) if self.max_screen > 0 else 0
+
             if self.backend == "brightnessctl":
-                self._last_raw = raw
-                self._last_percent = int((raw / self.max_screen) * 100)
-                self.emit("screen", self._last_percent)
+                self.emit("screen", percent)
                 exec_shell_command_async(
                     f"brightnessctl --device '{self._get_screen_device()}' set {raw}"
                 )
             elif self.backend == "ddcutil":
-                self._last_percent = raw
                 self._last_update_time = time.time()
-                self.emit("screen", raw)
+                self.emit("screen", percent)
                 exec_shell_command_async(
                     f"ddcutil --bus {self.ddcutil_bus} {self.DDCUTIL_PARAMS} --terse setvcp 10 {raw}",
                     lambda exit_code, stdout, stderr: logger.error(
