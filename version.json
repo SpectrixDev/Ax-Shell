@@ -1,5 +1,8 @@
 {
   "version": "0.0.60",
   "pkg_update": false,
-  "changelog": ["<b>fix:</b> Brightness not appearing in brightnessctl devices"]
+  "changelog": [
+    "<b>fix:</b> Brightness not appearing in brightnessctl devices",
+    "<b>fix:</b> Endless curls to wttr.in"
+  ]
 }
