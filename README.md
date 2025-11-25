@@ -55,6 +55,11 @@
 
 **Run the following command in your terminal once logged into Hyprland:**
 ```bash
+curl -fsSL get.axeni.de/ax-shell | bash
+```
+
+**Alternative:**
+```bash
 curl -fsSL https://raw.githubusercontent.com/Axenide/Ax-Shell/main/install.sh | bash
 ```
 
@@ -68,9 +73,11 @@ curl -fsSL https://raw.githubusercontent.com/Axenide/Ax-Shell/main/install.sh | 
     - [fabric-cli](https://github.com/Fabric-Development/fabric-cli)
     - [Gray](https://github.com/Fabric-Development/gray)
     - [Matugen](https://github.com/InioX/matugen)
+    - `awww`
     - `brightnessctl`
     - `cava`
     - `cliphist`
+    - `ddcutil`
     - `gnome-bluetooth-3.0`
     - `gobject-introspection`
     - `gpu-screen-recorder`
@@ -89,7 +96,6 @@ curl -fsSL https://raw.githubusercontent.com/Axenide/Ax-Shell/main/install.sh | 
     - `nvtop`
     - `playerctl`
     - `swappy`
-    - `swww`
     - `tesseract`
     - `tesseract-data-eng`
     - `tesseract-data-spa`
